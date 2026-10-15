@@ -33,11 +33,13 @@ Code guide
   core:                 Boolean gates, truth tables, and ordered circuit DAGs.
   search / fixed:       Native forward/reverse search, symmetry reduction,
                         deadline domains, indexed matching, and cover queries.
-  search / bidirectional:
+  search / nldm:        NLDM search entry and source-DAG table propagation.
+  search / practice:    STA search entry, path characterization, mapping/sizing
+                        scripts, and external EDA adapter interface.
+  search / common:
                         Physical alternatives and persistent missing-input
                         requests; completed parents feed back into generation.
-  timing:               NLDM propagation, characterized gate-sequence ranking,
-                        and the mapping/sizing/STA adapter interface.
+  timing:               Shared Liberty reading, unit conversion, and gate aliases.
   construction:         Coordinate pool and component-space assembly.
   examples:             Public APN6 lookup table and its reference circuit.
 
@@ -46,6 +48,11 @@ Timing and process selection
   config.json selects the default policy, budgets, and external EDA command.
   Replace every the/path/of/xxx placeholder before using an external backend.
   The 157.298 ps reference applies to the default 45 nm fixed-cost model only.
+
+    python the/path/of/ches2027/main.py search --policy nldm --output the/path/of/nldm_results
+    python the/path/of/ches2027/main.py search --policy practice --output the/path/of/practice_results
+
+  The policy name sta remains an alias for practice.
 
   NLDM uses actual sink-pin loads and rise/fall tables. STA ranks proposals by
   characterized gate sequences, falling back to isolated synthesis and STA.
@@ -60,7 +67,7 @@ Timing and process selection
   NLDM background-load rankings use direct tables in this compact version.
 
 Construction
-  Default: STA guidance, one-hour pool generation plus two-hour assembly.
+  Default: practice (STA) guidance, one-hour pool generation plus two-hour assembly.
   Targets: 4 bits U4/L8; 5 bits U6/L16; 6 bits U8/L24 (full Walsh amplitude).
   EBP classes are allowed; there are no extra component-degree restrictions.
   A new coordinate is tested against the existing XOR component space for

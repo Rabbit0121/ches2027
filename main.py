@@ -10,6 +10,7 @@ if __package__ in (None, ''):
 
 from .core.model import Problem, emit
 from .search.fixed.audit import audit
+from .search.common.settings import configured_path
 
 ROOT = Path(__file__).resolve().parent
 
@@ -18,27 +19,14 @@ def load(name):
     return json.loads((ROOT / name).read_text())
 
 
-def configured_path(value):
-    if 'the/path/of/' in str(value):
-        raise ValueError('Replace the/path/of/xxx with a configured location')
-    return Path(value)
-
-
 def timing(policy, profile, config):
-    from .timing.library import read_library
-    from .timing.oracle import NLDM
-    path = configured_path(profile['liberty'])
-    library = read_library(path)
     if policy == 'nldm':
-        return NLDM(library, config['slew_ps']), library, None
-    from .timing.sta import MappedSTA
-    from .timing.path_score import PathTable
-    for token in config['eda_command']:
-        if 'the/path/of/' in token:
-            raise ValueError('Configure the external EDA adapter command')
-    measure = MappedSTA(config['eda_command'], path, config['slew_ps'])
-    paths = PathTable(measure, config['path_depth'], config['path_budget'], config['load_ff'])
-    return measure, library, paths
+        from .search.nldm.search import make_timing
+    elif policy == 'practice':
+        from .search.practice.search import make_timing
+    else:
+        raise ValueError('Unknown timing policy')
+    return make_timing(profile, config)
 
 
 def main():
@@ -46,7 +34,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('task', choices=['search', 'verify', 'construct'], nargs='?', default='search')
     parser.add_argument('--technology', type=int, choices=[15, 45, 55])
-    parser.add_argument('--policy', choices=['fixed', 'nldm', 'sta'])
+    parser.add_argument('--policy', choices=['fixed', 'nldm', 'practice', 'sta'],
+                        help='Timing policy; sta is an alias for practice')
     parser.add_argument('--bits', type=int, choices=[4, 5, 6], default=4)
     parser.add_argument('--seconds', type=float)
     parser.add_argument('--output', type=Path)
@@ -68,6 +57,8 @@ def main():
                               delay_ps=result['worst_fs'] / 1000, audit=result), indent=2))
         return
     policy = args.policy or (config['construction']['timing'] if args.task == 'construct' else config['policy'])
+    if policy == 'sta':
+        policy = 'practice'
     out = configured_path(args.output or config['output'])
     out.mkdir(parents=True, exist_ok=False)
     if args.task == 'search' and policy == 'fixed':
@@ -81,22 +72,22 @@ def main():
         (out / 'circuit.json').write_text(json.dumps(circuit, indent=2) + '\n')
         (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     elif policy == 'fixed':
-        raise ValueError('Construction uses STA by default or optional NLDM timing')
+        raise ValueError('Construction uses practice by default or optional NLDM timing')
     else:
-        measure, library, paths = timing(policy, profile, config)
         if args.task == 'search':
-            from .search.bidirectional import Search, Config
-            from .timing.oracle import Oracle
-            cfg = Config(seconds=args.seconds or config['search_seconds'],
-                         max_states=config['max_states'], max_demands=config['max_demands'],
-                         timing='measured' if policy == 'sta' else 'nldm')
-            factory = lambda s: Oracle(s, measure, library, paths, config['load_ff'])
-            engine = Search(problem, factory, cfg)
+            if policy == 'nldm':
+                from .search.nldm.search import create_search
+            elif policy == 'practice':
+                from .search.practice.search import create_search
+            else:
+                raise ValueError('Unknown timing policy')
+            engine = create_search(problem, profile, config, args.seconds)
             result = engine.run()
             (out / 'report.json').write_text(json.dumps(result, indent=2) + '\n')
             if all(i is not None for i in engine.roots):
                 (out / 'circuit.json').write_text(json.dumps(engine.structures.circuit(engine.roots), indent=2) + '\n')
         else:
+            measure, library, paths = timing(policy, profile, config)
             from .construction.pool import Pool
             from .construction.assemble import construct
             settings = dict(config['construction'], **config['construction']['targets'][str(args.bits)])

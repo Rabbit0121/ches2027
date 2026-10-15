@@ -182,3 +182,18 @@ def evaluate(graph, library, s0=20.0, mode='exact', certify=False, boundary=None
     if native_engine is not None and native_engine.library is library and (mode == 'exact') and (boundary is None) and (not certify):
         return native_engine.evaluate(graph, s0)
     return evaluate_python(graph, library, s0, mode, certify, boundary)
+
+
+class NLDM:
+    def __init__(self, library, slew_ps=20.):
+        self.library, self.slew_ps = library, slew_ps
+
+    def __call__(self, spec, background_ff=0.):
+        graph = compile_graph(spec, self.library)
+        if background_ff:
+            for load in graph[1][:graph[0]]:
+                load[0] += background_ff
+                load[1] += background_ff
+        result = evaluate_python(graph, self.library, self.slew_ps)
+        result['outputs_ps'] = [max(result['arrivals_ps'][o]) for o in graph[3]]
+        return result

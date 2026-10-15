@@ -1,7 +1,7 @@
 """Check native cell functions and rename physical pins to canonical gate aliases."""
 import re
 from itertools import permutations
-from . import nldm as b
+from ..search.nldm import timing as b
 from ..core.model import ARITY, gate
 from ..core.structure import physical_pins
 

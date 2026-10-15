@@ -3,9 +3,9 @@ import json
 import math
 import subprocess
 from collections import Counter
-from ..core.structure import physical_pins
-from ..core.model import ARITY
-from ..search.fixed.audit import scalar
+from ...core.structure import physical_pins
+from ...core.model import ARITY
+from ..fixed.audit import scalar
 
 MAPPING_SCRIPT = ('strash; ifraig; scorr; dc2; dretime; retime; strash; '
                   '&get -n; &dch -f; &nf; &put; buffer; upsize; dnsize; stime -p')

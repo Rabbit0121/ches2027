@@ -1,12 +1,12 @@
 """Forward generation, retained physical alternatives, and pending reverse requests."""
-from ..timing.oracle import invert_pin
+from .oracle import invert_pin
 from collections import deque, OrderedDict
 from dataclasses import dataclass, field
 from itertools import product
 import json
 import random
 import time
-from ..core.structure import Structures, ARITY
+from ...core.structure import Structures, ARITY
 
 @dataclass
 class Config:
@@ -182,7 +182,7 @@ class Search:
         self.initialise()
 
     def initialise(self):
-        from .fixed.adaptive import initial
+        from ..fixed.adaptive import initial
         for raw in range(self.p.n):
             for kind in ('BUF', 'INV'):
                 self.offer(self.structures.make(kind, (-raw-1,)), 'input', submit=False)

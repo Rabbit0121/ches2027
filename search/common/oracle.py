@@ -1,8 +1,8 @@
 """Common interface for local ranking and complete-circuit timing."""
 from collections import OrderedDict
 from types import SimpleNamespace
-from . import nldm
-from ..core.model import gate
+from ..nldm import timing as nldm
+from ...core.model import gate
 
 
 def invert_pin(structures, kind, prefix, value, care):
@@ -12,21 +12,6 @@ def invert_pin(structures, kind, prefix, value, care):
     one = gate(kind, args + [mask], mask)
     delta = zero ^ one
     return (value ^ zero) & care & delta, care & delta, care & ~delta & (value ^ zero)
-
-
-class NLDM:
-    def __init__(self, library, slew_ps=20.):
-        self.library, self.slew_ps = library, slew_ps
-
-    def __call__(self, spec, background_ff=0.):
-        graph = nldm.compile_graph(spec, self.library)
-        if background_ff:
-            for load in graph[1][:graph[0]]:
-                load[0] += background_ff
-                load[1] += background_ff
-        result = nldm.evaluate_python(graph, self.library, self.slew_ps)
-        result['outputs_ps'] = [max(result['arrivals_ps'][o]) for o in graph[3]]
-        return result
 
 
 class Oracle:

@@ -1,7 +1,7 @@
 """Characterized gate sequences rank proposals; complete graphs decide acceptance."""
 import random
 from weakref import WeakKeyDictionary
-from ..core.structure import ARITY, physical_pins
+from ...core.structure import ARITY, physical_pins
 
 
 class PathTable:

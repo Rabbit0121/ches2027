@@ -39,6 +39,6 @@
     "guided_jitter_ps": 2.0,
     "keep": 8,
     "exclude_ebp": false,
-    "timing": "sta"
+    "timing": "practice"
   }
 }

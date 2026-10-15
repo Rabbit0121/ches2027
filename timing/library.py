@@ -6,7 +6,7 @@ ranges use the upper endpoint for max-delay analysis. OpenSTA reads native units
 from pathlib import Path
 import math
 import re
-from . import nldm as b
+from ..search.nldm import timing as b
 def clean(text):
     text = re.sub('/\\*.*?\\*/|//[^\\n]*', '', text, flags=re.S)
     return re.sub('\\\\\\r?\\n', '', text)
