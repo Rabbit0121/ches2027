@@ -1,0 +1,44 @@
+{
+  "technology_nm": 45,
+  "policy": "fixed",
+  "search_seconds": 36000,
+  "max_states": 1000000,
+  "max_demands": 1024,
+  "native_slice_seconds": 3.0,
+  "expected_fixed_delay_fs": 157298,
+  "driver": "INV_X1",
+  "slew_ps": 20.0,
+  "load_ff": 5.0,
+  "path_depth": 4,
+  "path_budget": 64,
+  "output": "the/path/of/results",
+  "eda_command": [
+    "the/path/of/eda_adapter"
+  ],
+  "construction": {
+    "targets": {
+      "4": {
+        "uniformity": 4,
+        "linearity": 8
+      },
+      "5": {
+        "uniformity": 6,
+        "linearity": 16
+      },
+      "6": {
+        "uniformity": 8,
+        "linearity": 24
+      }
+    },
+    "pool_seconds": 3600,
+    "assembly_seconds": 7200,
+    "depth": 5,
+    "variants_per_function": 16,
+    "joint_trials": 16,
+    "guided_width": 8,
+    "guided_jitter_ps": 2.0,
+    "keep": 8,
+    "exclude_ebp": false,
+    "timing": "sta"
+  }
+}
