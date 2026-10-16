@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import sys
 
+sys.dont_write_bytecode = True
+
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     __package__ = 'ches2027'
@@ -32,7 +34,7 @@ def timing(policy, profile, config):
 def main():
     config, profiles = load('config.json'), load('profiles.json')
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('task', choices=['search', 'verify', 'construct'], nargs='?', default='search')
+    parser.add_argument('task', choices=['search', 'verify', 'construct', 'proof'], nargs='?', default='search')
     parser.add_argument('--technology', type=int, choices=[15, 45, 55])
     parser.add_argument('--policy', choices=['fixed', 'nldm', 'practice', 'sta'],
                         help='Timing policy; sta is an alias for practice')
@@ -40,7 +42,11 @@ def main():
     parser.add_argument('--seconds', type=float)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--config', type=Path)
+    parser.add_argument('--proof-stage', choices=['plan', 'check', 'run', 'audit'], default='plan')
+    parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
+    if args.resume and (args.task != 'proof' or args.proof_stage != 'run'):
+        parser.error('--resume applies to proof --proof-stage run')
     if args.config:
         config = json.loads(configured_path(args.config).read_text())
     args.technology = args.technology or config['technology_nm']
@@ -49,6 +55,16 @@ def main():
     profile = profiles[str(args.technology)]
     problem = Problem.load(ROOT / 'examples' / 'apn6.json')
     problem.costs = profile['gate_costs_fs']
+    if args.task == 'proof':
+        if args.technology != 45 or args.policy not in (None, 'fixed'):
+            raise ValueError('The APN6 proof uses the specified 45 nm fixed-cost model')
+        from .search.fixed.proof.model import D, S
+        if problem.costs != D or problem.sbox != S:
+            raise ValueError('The proof requires the supplied APN6 mapping and gate costs')
+        from .search.fixed.proof.entry import execute
+        result = execute(args.proof_stage, configured_path(args.output or config['output']), args.resume)
+        print(json.dumps(result, indent=2))
+        return
     if args.task == 'verify':
         result = audit(problem, load('examples/apn6_witness.json'))
         if args.technology == 45 and result['worst_fs'] != config['expected_fixed_delay_fs']:

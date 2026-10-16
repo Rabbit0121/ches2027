@@ -20,8 +20,8 @@ Default case
 The search builds its initial circuit from the truth table; it does not load
 the reference circuit. The reference check and a new search are separate tasks.
 The default parameters describe the APN6 instance; a time-limited search may
-finish with a different bound. This compact package does not include the
-independent lower-bound proof.
+finish with a different bound. The independent lower-bound computation is
+provided separately in the Fixed proof module.
 
 Core mechanism
   Forward gates generate functions. Reverse gate relations request a missing
@@ -33,6 +33,9 @@ Code guide
   core:                 Boolean gates, truth tables, and ordered circuit DAGs.
   search / fixed:       Native forward/reverse search, symmetry reduction,
                         deadline domains, indexed matching, and cover queries.
+  search / fixed / proof:
+                        Structure-first APN6 lower-bound enumeration, exact
+                        root-family queries, and completion audit.
   search / nldm:        NLDM search entry and source-DAG table propagation.
   search / practice:    STA search entry, path characterization, mapping/sizing
                         scripts, and external EDA adapter interface.
@@ -42,6 +45,12 @@ Code guide
   timing:               Shared Liberty reading, unit conversion, and gate aliases.
   construction:         Coordinate pool and component-space assembly.
   examples:             Public APN6 lookup table and its reference circuit.
+
+APN6 proof
+  The separate proof module enumerates structures before input assignments,
+  then checks every root family at 157297 fs. NAND2 uses weighted exceptions;
+  OAI21 uses common-center matching. Its README gives the four execution stages.
+  Plan and small checks do not rerun the complete lower-bound computation.
 
 Timing and process selection
   profiles.json separates the three process cost tables and library locations.

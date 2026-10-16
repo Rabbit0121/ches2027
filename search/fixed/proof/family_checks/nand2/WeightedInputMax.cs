@@ -1,0 +1,14 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Numerics;
+public static class WeightedInputMax {
+ sealed class Hash:IEqualityComparer<ulong>{public bool Equals(ulong x,ulong y)=>x==y;public int GetHashCode(ulong x){unchecked{x^=x>>30;x*=0xbf58476d1ce4e5b9UL;x^=x>>27;x*=0x94d049bb133111ebUL;x^=x>>31;return(int)x;}}}
+ struct Node {public ulong Or,And;public int L,R,Bit,Pop;}
+ static Node[] nodes;static ulong[] keys;static int count;
+ static int Build(int lo,int hi){int at=count++;Node n=new Node{L=-1,R=-1};if(hi-lo==1){n.Or=n.And=keys[lo];n.Pop=BitOperations.PopCount(keys[lo]);}else{n.Bit=63-BitOperations.LeadingZeroCount(keys[lo]^keys[hi-1]);ulong edge=(keys[lo]&(~0UL<<n.Bit))|(1UL<<n.Bit);int a=lo,b=hi;while(a<b){int m=(a+b)>>1;if(keys[m]<edge)a=m+1;else b=m;}n.L=Build(lo,a);n.R=Build(a,hi);n.Or=nodes[n.L].Or|nodes[n.R].Or;n.And=nodes[n.L].And&nodes[n.R].And;n.Pop=Math.Max(nodes[n.L].Pop,nodes[n.R].Pop);}nodes[at]=n;return at;}
+ static bool StrictSuper(int at,ulong f,int pop){ref Node n=ref nodes[at];if(n.Pop<=pop||(n.Or&f)!=f)return false;if((n.And&f)==f)return true;if(n.L<0)return false;if(((f>>n.Bit)&1)!=0)return StrictSuper(n.R,f,pop);return StrictSuper(n.R,f,pop)||StrictSuper(n.L,f,pop);}
+ public static void Run(string input,string weightFile,string output,ulong target,int threshold){var sw=System.Diagnostics.Stopwatch.StartNew();var weights=new int[64];ulong positive=0;using(var r=new BinaryReader(File.OpenRead(weightFile)))for(int i=0;i<64;i++){weights[i]=r.ReadInt32();if(weights[i]<0)throw new Exception("negative");if(weights[i]>0)positive|=1UL<<i;}if((positive&~target)!=0)throw new Exception("weight outside target");ulong forbidden=~target,mask=positive|forbidden;var map=new Dictionary<ulong,(ulong f,int t,int id)>(new Hash());int total,eligible=0;using(var r=new BinaryReader(File.OpenRead(input))){total=r.ReadInt32();for(int i=0;i<total;i++){ulong f=r.ReadUInt64();int t=r.ReadInt32();int cost=0;ulong v=f&positive;while(v!=0){int b=BitOperations.TrailingZeroCount(v);cost+=weights[b];v&=v-1;}if(cost<threshold)continue;eligible++;ulong k=(f^forbidden)&mask;if(!map.TryGetValue(k,out var old)||t<old.t)map[k]=(f,t,i);}}
+ keys=new ulong[map.Count];map.Keys.CopyTo(keys,0);Array.Sort(keys);nodes=new Node[Math.Max(1,keys.Length*2)];count=0;var kept=new List<ulong>();if(keys.Length>0){Build(0,keys.Length);foreach(ulong k in keys)if(!StrictSuper(0,k,BitOperations.PopCount(k)))kept.Add(k);}using(var w=new BinaryWriter(File.Create(output))){w.Write(kept.Count);foreach(ulong k in kept){w.Write(map[k].f);w.Write(map[k].t);}}File.WriteAllText(output+".json",$"{{\"complete_source_inputs\":{total},\"weighted_eligible\":{eligible},\"unique_active_projections\":{keys.Length},\"maximal_active_projections\":{kept.Count},\"active_mask\":{mask},\"seconds\":{sw.Elapsed.TotalSeconds}}}");
+ }
+}
